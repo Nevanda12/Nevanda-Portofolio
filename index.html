@@ -954,8 +954,11 @@
     }
     .skill-card h3 {
         font-size: 0.9rem;
+        margin: 0; /* Menghilangkan margin berlebih agar rapi di tengah */
     }
-
+    .skill-card p {
+        display: none !important; /* MENGHILANGKAN TEKS DESKRIPSI HANYA DI HP */
+    }
     /* 7. Projects Reworked */
     .projects-grid {
         grid-template-columns: 1fr; /* Kartu project berbaris ke bawah */
