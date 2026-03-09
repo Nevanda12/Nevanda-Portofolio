@@ -934,18 +934,26 @@
 
     /* 6. Skills (Portal Animasi) */
     .skills-grid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 30px;
+        grid-template-columns: repeat(2, 1fr); /* Memaksa jadi 2 kolom sejajar di HP */
+        gap: 20px;
+        justify-items: center; /* Memastikan bulatan berada pas di tengah */
     }
     .skill-card {
         padding: 15px;
-        max-width: 160px; /* Menyesuaikan bulatan agar tidak memenuhi layar */
+        width: 130px; /* Mengunci lebar */
+        height: 130px; /* Mengunci tinggi agar sama dengan lebar */
+        border-radius: 50%; /* Memaksa bentuk tetap bulat sempurna */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     .skill-icon {
         font-size: 2rem;
+        margin-bottom: 5px; /* Memberi sedikit jarak antara ikon dan teks */
     }
     .skill-card h3 {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     /* 7. Projects Reworked */
