@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nevanda Portfolio | Space Journey</title>
+    <style>
+
+        /* --- ANIMASI ASTRONOT & ASTEROID DI NAVBAR --- */
+.space-chase-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Mencegah ikon terlihat melampaui batas kotak navbar */
+    pointer-events: none; /* PENTING: Membuat klik kursor tembus ke tombol di bawahnya */
+    z-index: 0; /* Diletakkan di lapisan dasar navbar */
+}
+
+/* Update pada nav-content milikmu untuk memastikannya berada di depan animasi */
+.nav-content {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    position: relative; /* Menambahkan properti ini */
+    z-index: 2; /* Memaksa teks/tombol berada di atas efek terbang */
+}
+
+/* Mengatur posisi kejar-kejaran */
+.chase-wrapper {
+    position: absolute;
+    top: 50%;
+    display: flex;
+    gap: 40px; /* Jarak antara asteroid dan astronot */
+    align-items: center;
+    width: max-content;
+    font-size: 1.8rem; /* Ukuran emoji, bisa diperbesar/kecilkan */
+    animation: patrol 15s linear infinite; /* Durasi 15 detik bolak-balik */
+}
+
+/* Memberikan sedikit efek cahaya/glow */
+.astronaut { filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.8)); }
+.asteroid { filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8)); }
+
+/* Logika pergerakan melintas dan berputar arah */
+@keyframes patrol {
+    0% {
+        left: -20%;
+        transform: translateY(-50%) scaleX(1); /* Hadap dan jalan ke kanan */
+    }
+    48% {
+        left: 110%; /* Sampai di ujung kanan */
+        transform: translateY(-50%) scaleX(1);
+    }
+    50% {
+        left: 110%;
+        transform: translateY(-50%) scaleX(-1); /* Efek memutar balik tubuh dan arah */
+    }
+    98% {
+        left: -20%; /* Sampai di ujung kiri */
+        transform: translateY(-50%) scaleX(-1);
+    }
+    100% {
+        left: -20%;
+        transform: translateY(-50%) scaleX(1); /* Kembali hadap kanan untuk putaran baru */
+    }
+}
+        /* --- RESET & VARIABLES --- */
+        :root {
+            --bg-deep: #020204;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-gold: #fbbf24;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #a855f7;
+            --font-main: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-serif: 'Space Grotesk', 'Georgia', serif;
+            --transition-slow: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            --glass-bg: rgba(10, 15, 30, 0.5);
+            --glass-border: rgba(6, 182, 212, 0.2);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            cursor: none !important; /* Menyembunyikan kursor default untuk roket kustom */
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+            position: relative; /* Penting untuk penempatan canvas kursor */
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* --- INTERACTIVE SPACE CANVAS --- */
+        #space-warp {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2; /* Di belakang semua konten */
+            background: #000;
+        }
+
+        /* --- ROCKET CURSOR CANVAS (ON TOP) --- */
+        #rocket-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none; /* Klik bisa menembus canvas ini ke elemen di bawahnya */
+            z-index: 10000; /* Selalu di depan navigasi, glass panel, dll. */
+            cursor: none;
+        }
+
+        /* --- GLASSMORPHISM UTILITIES --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: var(--transition-slow);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+        }
+
+        /* --- UTILITIES & ANIMATIONS --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px) scale(0.95);
+            transition: opacity 1s ease, transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0) scale(1); 
+        }
+
+        .reveal-flip {
+            opacity: 0;
+            transform: perspective(2000px) rotateY(90deg) translateY(50px);
+            transform-style: preserve-3d;
+            transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .reveal-flip.active {
+            opacity: 1;
+            transform: perspective(2000px) rotateY(0deg) translateY(0);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.6); }
+        }
+
+        /* --- LAYOUT COMPONENTS --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        section { padding: 120px 0; position: relative; }
+
+        h2 {
+            font-family: var(--font-serif);
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple), var(--accent-gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            opacity: 0;
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0; width: 100%;
+            padding: 20px 0;
+            z-index: 1000;
+            
+            /* Menggunakan gambar dari folder assets beserta overlay gelap transparan */
+            background: linear-gradient(rgba(2, 2, 4, 0.75), rgba(2, 2, 4, 0.75)), url('assets/');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+        }
+        
+        .nav-content { display: flex; justify-content: space-between; align-items: center; }
+
+        .logo {
+            font-family: var(--font-serif);
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 15px var(--accent-cyan);
+            letter-spacing: 3px;
+        }
+
+        .nav-links a {
+            margin-left: 30px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: ''; position: absolute;
+            bottom: -5px; left: 0; width: 0%; height: 2px;
+            background: var(--accent-cyan);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after { width: 100%; }
+        .nav-links a:hover { color: var(--accent-cyan); text-shadow: 0 0 10px var(--accent-cyan); }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            /* Tambahan Background Khusus Hero Section */
+    background: linear-gradient(rgba(2, 2, 4, 0.6), rgba(2, 2, 4, 0.9)), url('assets/laptop.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    }
+
+        .interaction-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent-cyan);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: pulseGlow 2s infinite;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .hero-content { text-align: center; z-index: 10; }
+
+        .hero h1 {
+            font-family: var(--font-serif);
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            letter-spacing: -2px;
+            text-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
+            opacity: 0;
+            animation: fadeInUp 1.2s forwards 0.5s;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeInUp 1.2s forwards 0.8s;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .btn-magic {
+            display: inline-block;
+            padding: 18px 45px;
+            border: 1px solid var(--accent-cyan);
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 50px;
+            background: rgba(6, 182, 212, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.4s ease;
+            opacity: 0;
+            animation: fadeInUp 1.2s forwards 1.1s;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-magic:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-deep);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
+            transform: scale(1.05);
+        }
+
+        /* --- ABOUT ME & RESUME --- */
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .about-text { padding: 40px; }
+        .about-text p {
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .about-img-wrapper {
+            position: relative; 
+            width: 100%; 
+            max-width: 380px; 
+            margin: 0 auto;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            /* Efek melayang levitasi kuantum (3D) */
+            animation: quantumLevitation 7s ease-in-out infinite;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        @keyframes quantumLevitation {
+            0%, 100% { transform: translateY(0) rotateX(2deg) rotateY(-2deg); }
+            50% { transform: translateY(-15px) rotateX(-2deg) rotateY(4deg); }
+        }
+
+        /* 2. Cincin Radar Data Terluar (HUD Outer Ring) */
+        .about-img-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: -25px;
+            border-radius: 50%;
+            border: 2px dashed rgba(6, 182, 212, 0.3);
+            border-top: 3px solid var(--accent-cyan);
+            border-bottom: 3px solid var(--accent-purple);
+            animation: hudSpin 15s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+            transition: all 0.5s ease;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+        }
+
+        /* 3. Cincin Putar Terdalam (HUD Inner Ring) */
+        .about-img-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px dotted var(--accent-gold);
+            animation: hudSpin 10s linear infinite reverse;
+            pointer-events: none;
+            z-index: 2;
+            transition: all 0.4s ease;
+            opacity: 0.6;
+        }
+
+        @keyframes hudSpin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 4. Potongan Gambar ala Mecha / Sci-Fi HUD */
+        .about-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Memotong pinggiran menjadi octagon (mecha style) */
+            clip-path: polygon(15% 0, 85% 0, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0 85%, 0 15%);
+            filter: grayscale(35%) contrast(110%) brightness(0.8) hue-rotate(-10deg);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- EFEK INTERAKSI SAAT DISOROT KURSOR --- */
+        .about-img-wrapper:hover {
+            animation-play-state: paused; 
+            transform: scale(1.05); /* Membesar dan seolah mendekat */
+            filter: drop-shadow(0 0 25px rgba(6, 182, 212, 0.4));
+        }
+
+        /* Radar meluas dan berputar super cepat seperti mengunci target */
+        .about-img-wrapper:hover::before {
+            inset: -40px;
+            border-width: 4px;
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.5), inset 0 0 20px rgba(168, 85, 247, 0.4);
+            animation-duration: 2.5s; 
+        }
+
+        /* Cincin dalam berubah menjadi Laser Scanner Vertikal (Hologram Mode) */
+        .about-img-wrapper:hover::after {
+            inset: 0; 
+            border-radius: 0;
+            border: none;
+            clip-path: polygon(15% 0, 85% 0, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0 85%, 0 15%);
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                transparent 49%,
+                var(--accent-cyan) 50%,
+                var(--accent-purple) 51%,
+                transparent 52%,
+                transparent 100%
+            );
+            background-size: 100% 200%;
+            animation: holoScanLine 2s linear infinite;
+            opacity: 1;
+            box-shadow: inset 0 0 30px rgba(6, 182, 212, 0.5); /* Efek tabung glow di dalam */
+        }
+
+        @keyframes holoScanLine {
+            0% { background-position: 0% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        /* Gambar menjadi sangat tajam & berwarna asli saat target dikunci */
+        .about-img-wrapper:hover .about-img {
+            filter: grayscale(0%) contrast(120%) brightness(1.1) hue-rotate(0deg);
+            /* Potongan meluas sedikit memamerkan gaya mecha armor */
+            clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%);
+        }
+
+        /* Resume Grid Styles */
+        .resume-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
+            margin-top: 40px; padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .resume-column h3 {
+            color: var(--accent-cyan);
+            font-family: var(--font-serif);
+            font-size: 1.5rem; margin-bottom: 25px;
+        }
+
+        .resume-item {
+            margin-bottom: 25px; position: relative; padding-left: 20px;
+            border-left: 2px solid rgba(6, 182, 212, 0.3);
+            transition: all 0.3s;
+        }
+        .resume-item:hover { border-left-color: var(--accent-purple); padding-left: 25px; }
+
+        .resume-year { font-size: 0.85rem; color: var(--accent-gold); font-weight: bold; display: block; margin-bottom: 4px; }
+        .resume-place { font-size: 1.1rem; color: #fff; font-weight: 600; display: block; }
+        .resume-role { font-size: 0.95rem; color: var(--text-muted); }
+
+        /* --- SKILLS --- */
+        .skills-grid {
+            display: grid; 
+            /* Dibuat auto-fit agar bulatan tidak pipih saat layar dikecilkan */
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 50px; /* Jarak dilebarkan agar portal tidak bertabrakan */
+            justify-items: center; /* Menengahkan setiap bulatan */
+            padding-top: 20px;
+        }
+
+        .skill-card {
+            background: rgba(10, 15, 30, 0.6);
+            border-radius: 50%; /* Mengubah bentuk menjadi bulat sempurna */
+            aspect-ratio: 1 / 1; /* Memastikan bulatan sama sisi */
+            width: 100%;
+            max-width: 250px; /* Batas ukuran bulatan maksimal */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            transition: all 0.4s ease;
+            z-index: 1;
+        }
+
+        /* Lingkaran Portal 1 (Arah putar ke kanan) - Cincin utama */
+        .skill-card::before {
+            content: '';
+            position: absolute;
+            inset: -4px; /* Berada sedikit di luar batasan kotak */
+            border-radius: 50%;
+            border: 4px dashed var(--accent-gold); /* Cincin putus-putus emas khas portal */
+            box-shadow: 0 0 15px var(--accent-gold), inset 0 0 15px var(--accent-gold);
+            animation: portalSpin 10s linear infinite; /* Berputar tiada henti */
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.8;
+        }
+
+        /* Lingkaran Portal 2 (Arah putar ke kiri) - Percikan sihir terluar */
+        .skill-card::after {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            border: 2px dotted rgba(251, 191, 36, 0.6); 
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+            animation: portalSpin 15s linear infinite reverse; /* Putar terbalik (reverse) */
+            pointer-events: none;
+            z-index: -2;
+            opacity: 0.5;
+        }
+
+        /* Animasi roda portal */
+        @keyframes portalSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Reaksi ajaib saat kursor masuk ke dalam portal */
+        .skill-card:hover {
+            background: rgba(251, 191, 36, 0.15); /* Muncul hawa energi keemasan */
+            transform: scale(1.05); /* Sedikit membesar */
+            z-index: 10;
+        }
+
+        .skill-card:hover::before {
+            animation-duration: 3s; /* Putaran portal memanas / makin cepat */
+            box-shadow: 0 0 30px var(--accent-gold), inset 0 0 20px var(--accent-gold);
+            border-color: #fff; /* Tepian memutih saking panasnya */
+        }
+        
+        .skill-card:hover::after {
+            animation-duration: 5s; /* Putaran percikan makin cepat */
+            box-shadow: 0 0 20px var(--accent-gold);
+            border-color: var(--accent-gold);
+        }
+
+        .skill-icon {
+            font-size: 3rem;
+            margin-bottom: 5px;
+            display: inline-block;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55), filter 0.3s;
+        }
+
+           .skill-card:hover .skill-icon {
+            transform: rotateY(360deg); /* Ikon berputar 3D layaknya koin */
+            filter: drop-shadow(0 0 15px var(--accent-gold));
+        }
+
+        .skill-card h3 {
+            font-size: 1.15rem;
+            color: var(--text-main);
+            margin-bottom: 5px;
+            transition: color 0.3s;
+        }
+
+        .skill-card:hover h3 {
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+
+        /* Menyesuaikan ukuran teks agar pas masuk ke dalam lingkaran portal */
+        .skill-card p {
+            font-size: 0.8rem !important;
+            margin-top: 5px !important;
+            line-height: 1.4;
+            color: var(--text-muted);
+        }
+        /* --- PROJECTS REWORKED --- */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+            perspective: 1200px; /* Diperbesar agar efek 3D lebih terasa */
+        }
+
+        /* 1. Animasi "Astral Drift" - 3D Float, Breathing Border, Orbiting Shadow */
+        @keyframes astralDrift {
+            0%, 100% {
+                transform: translateY(0) rotateX(2deg) rotateY(-2deg);
+                box-shadow: -10px 10px 20px rgba(6, 182, 212, 0.1);
+                border-color: rgba(6, 182, 212, 0.3);
+            }
+            33% {
+                transform: translateY(-12px) rotateX(-2deg) rotateY(3deg);
+                box-shadow: 10px 15px 30px rgba(168, 85, 247, 0.2);
+                border-color: rgba(168, 85, 247, 0.5);
+            }
+            66% {
+                transform: translateY(-6px) rotateX(3deg) rotateY(2deg);
+                box-shadow: 0px 20px 25px rgba(6, 182, 212, 0.25);
+                border-color: rgba(6, 182, 212, 0.4);
+            }
+        }
+
+        /* 2. Animasi "Hologram Glare" - Pantulan cahaya melintas (Glassmorphism) */
+        @keyframes hologramGlare {
+            0%, 60% { left: -150%; opacity: 0; }
+            70% { opacity: 1; }
+            80%, 100% { left: 200%; opacity: 0; }
+        }
+
+        .project-card {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            background: rgba(10, 15, 30, 0.8);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.6s ease, border-color 0.6s ease;
+            z-index: 1;
+            /* Menggunakan Astral Drift */
+            animation: astralDrift 7s ease-in-out infinite;
+            transform-style: preserve-3d;
+        }
+
+        /* Delay (minus) agar saat web di-load posisinya sudah berbeda-beda & asinkron */
+        .project-card:nth-child(1) { animation-delay: 0s; animation-duration: 7s; }
+        .project-card:nth-child(2) { animation-delay: -2.5s; animation-duration: 8s; }
+        .project-card:nth-child(3) { animation-delay: -5s; animation-duration: 6.5s; }
+
+        /* Pantulan Kaca (Glass Glare) yang menyapu bagian atas kartu */
+        .project-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0), rgba(255, 255, 255, 0.15), rgba(255,255,255,0));
+            transform: skewX(-25deg);
+            animation: hologramGlare 6s ease-in-out infinite;
+            z-index: 20;
+            pointer-events: none; /* Sangat penting agar tidak menutupi klik tombol */
+        }
+        
+        .project-card:nth-child(2)::after { animation-delay: 2s; }
+        .project-card:nth-child(3)::after { animation-delay: 4s; }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            box-shadow: 0 0 0 rgba(6, 182, 212, 0);
+            transition: all 0.5s ease;
+            z-index: -1;
+        }
+
+        .project-card:hover {
+            animation: none; /* Matikan efek melayang saat sedang dibaca */
+            transform: translateY(-15px) rotateX(4deg) rotateY(0deg) scale(1.03) !important;
+            border-color: rgba(168, 85, 247, 0.8);
+            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.3), 0 0 20px rgba(6, 182, 212, 0.4);
+            z-index: 10;
+        }
+
+        .project-img-wrapper {
+            width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+            overflow: hidden;
+        }
+
+        .project-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.8s ease;
+            filter: brightness(0.6) grayscale(60%) hue-rotate(180deg);
+        }
+
+        .project-card:hover .project-img {
+            filter: brightness(1.1) grayscale(0%) hue-rotate(0deg);
+            transform: scale(1.08);
+        }
+
+        .project-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(2, 2, 4, 0.95) 0%, rgba(2, 2, 4, 0.2) 50%, transparent 100%);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; 
+            opacity: 0.85;
+            transition: all 0.5s ease;
+            z-index: 10;
+        }
+
+        .project-card:hover .project-overlay {
+            opacity: 1;
+            background: linear-gradient(to top, rgba(2, 2, 4, 0.98) 0%, rgba(6, 182, 212, 0.15) 100%);
+        }
+
+        .project-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .project-title {
+            color: var(--accent-cyan);
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            margin-bottom: 0;
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+            transition: all 0.4s ease;
+        }
+
+        .project-card:hover .project-title {
+            margin-bottom: 12px;
+        }
+
+        .tech-stack {
+            display: flex; gap: 8px; 
+            max-height: 0; margin: 0; opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s ease 0.1s;
+        }
+
+        .tech-pill {
+            font-size: 0.75rem; font-weight: bold;
+            padding: 4px 12px; border-radius: 20px;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: var(--text-main); letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .project-desc {
+            color: var(--text-muted); font-size: 0.95rem; 
+            max-height: 0; margin: 0; opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s ease 0.2s;
+        }
+
+        .project-link {
+            display: inline-flex; align-items: center;
+            color: var(--accent-gold); font-size: 0.9rem;
+            text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
+            max-height: 0; margin: 0; opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s ease 0.3s;
+        }
+
+        .project-card:hover .tech-stack {
+            max-height: 30px; margin-bottom: 15px; opacity: 1;
+        }
+
+        .project-card:hover .project-desc {
+            max-height: 80px; margin-bottom: 20px; opacity: 1;
+        }
+
+        .project-card:hover .project-link {
+            max-height: 30px; margin-bottom: 5px; opacity: 1;
+        }
+        
+        .project-link svg { margin-left: 8px; transition: transform 0.3s; }
+        .project-link:hover svg {
+            transform: translateX(5px);
+            filter: drop-shadow(0 0 5px var(--accent-gold));
+        }
+
+        /* --- DIMENSION LINK (CERTIFICATES) --- */
+        .dimension-box {
+            padding: 60px; text-align: center; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; width: 100%;
+            background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%);
+            border: 1px dashed var(--accent-cyan);
+            border-radius: 20px;
+            animation: pulseGlow 4s infinite;
+        }
+
+        .btn-hyperdrive {
+            display: inline-block; padding: 20px 50px;
+            background: transparent; border: 2px solid var(--accent-cyan);
+            color: var(--accent-cyan); font-size: 1.1rem; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 4px; border-radius: 50px;
+            text-decoration: none; transition: all 0.4s ease;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2), inset 0 0 20px rgba(6, 182, 212, 0.1);
+        }
+        
+        .btn-hyperdrive:hover {
+            box-shadow: 0 0 50px rgba(6, 182, 212, 0.8), inset 0 0 30px rgba(6, 182, 212, 0.5);
+            transform: translateY(-5px) scale(1.05); background: rgba(6, 182, 212, 0.1);
+            color: #fff;
+        }
+
+        /* --- CONTACT --- */
+        .contact-container { max-width: 700px; margin: 0 auto; text-align: center; }
+        
+        .contact-form { display: flex; flex-direction: column; gap: 25px; margin-bottom: 50px; padding: 40px; }
+
+        .input-group input, .input-group textarea {
+            width: 100%; padding: 18px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: white; font-family: var(--font-main); font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none; border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.05); box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .social-links { display: flex; justify-content: center; gap: 30px; }
+
+        .social-icon {
+            width: 60px; height: 60px;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: var(--text-main);
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+        }
+
+        .social-icon:hover {
+            border-color: var(--accent-gold); color: var(--bg-deep);
+            background: var(--accent-gold);
+            transform: translateY(-10px) scale(1.1) rotate(15deg);
+            box-shadow: 0 10px 25px rgba(251, 191, 36, 0.5);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 30px; right: 30px;
+            background: rgba(2, 2, 4, 0.95); border-left: 4px solid var(--accent-cyan);
+            color: white; padding: 20px 30px; border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            transform: translateX(200%); transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 2000; display: flex; align-items: center; gap: 15px; border: 1px solid var(--glass-border);
+        }
+        .toast.show { transform: translateX(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .about-content { grid-template-columns: 1fr; gap: 40px; }
+            .resume-grid { grid-template-columns: 1fr; }
+            .about-img-wrapper { order: -1; max-width: 250px; }
+            .nav-links { display: none; }
+            .interaction-hint { display: none; }
+        }
+        /* =======================================================
+   🚀 RESPONSIVE MOBILE DESIGN (MEDIA QUERIES)
+   ======================================================= */
+
+/* Untuk Tablet dan Smartphone (Lebar maksimal 768px) */
+@media (max-width: 768px) {
+    /* 1. Navigasi / Navbar */
+    .nav-content {
+        flex-direction: column;
+        gap: 15px;
+        padding: 10px 0;
+    }
+    .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        padding: 0;
+    }
+    .nav-links a {
+        margin-left: 0; /* Menghapus margin kiri agar presisi di tengah */
+        font-size: 0.8rem;
+    }
+
+    /* 2. Spacing & Typography General */
+    section {
+        padding: 60px 0; /* Mengurangi padding kosong yang terlalu lebar di HP */
+    }
+    h2 {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
+    }
+
+    /* 3. Hero Section (Halaman Paling Atas) */
+    .hero h1 {
+        font-size: 3rem; /* Memperkecil judul agar tidak terpotong */
+    }
+    .hero p {
+        font-size: 1.1rem;
+        padding: 0 15px;
+        margin-bottom: 2rem;
+    }
+    .btn-magic {
+        padding: 14px 35px;
+        font-size: 0.8rem;
+    }
+    .chase-wrapper {
+        font-size: 1.2rem; /* Memperkecil animasi astronot di navbar */
+        gap: 20px;
+    }
+
+    /* 4. About Me & Layout Gambar */
+    .about-content {
+        grid-template-columns: 1fr; /* Mengubah 2 kolom menjadi 1 kolom (atas bawah) */
+        gap: 40px;
+        text-align: center;
+    }
+    .about-text {
+        padding: 10px;
+    }
+    .about-img-wrapper {
+        max-width: 260px; /* Menyesuaikan ukuran gambar radar/hologram di HP */
+        margin: 0 auto;
+    }
+
+    /* 5. Resume (Experience) */
+    .resume-grid {
+        grid-template-columns: 1fr; /* Menjadikan 1 baris vertikal */
+        gap: 20px;
+    }
+    .resume-item {
+        text-align: left; /* Teks tetap rata kiri agar mudah dibaca */
+    }
+
+    /* 6. Skills (Portal Animasi) */
+    .skills-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 30px;
+    }
+    .skill-card {
+        padding: 15px;
+        max-width: 160px; /* Menyesuaikan bulatan agar tidak memenuhi layar */
+    }
+    .skill-icon {
+        font-size: 2rem;
+    }
+    .skill-card h3 {
+        font-size: 1rem;
+    }
+
+    /* 7. Projects Reworked */
+    .projects-grid {
+        grid-template-columns: 1fr; /* Kartu project berbaris ke bawah */
+        gap: 30px;
+    }
+    .project-card {
+        aspect-ratio: auto;
+        min-height: 250px; /* Menjaga agar kartu tidak gepeng */
+    }
+    
+    /* Penyesuaian Efek Hover untuk Layar Sentuh */
+    .project-card:hover {
+        transform: translateY(-5px) scale(1.02) !important;
+    }
+    
+    /* Kursor roket dimatikan di HP karena layar sentuh tidak butuh kursor */
+    * {
+        cursor: auto !important; 
+    }
+    #rocket-canvas {
+        display: none; 
+    }
+}
+
+/* Untuk HP Layar Sangat Kecil (Lebar maksimal 480px) */
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+    .logo {
+        font-size: 1.5rem;
+    }
+    .skills-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+}
+    </style>
+</head>
+<body>
+    
+    <canvas id="space-warp"></canvas>
+    <canvas id="rocket-canvas"></canvas>
+
+    <nav>
+        <div class="space-chase-container">
+        <div class="chase-wrapper">
+            <span class="asteroid">🪐</span>
+        </div>
+    </div>
+        <div class="container nav-content">
+            <div class="logo">N E V A N D A.</div>
+            <div class="nav-links">
+                <a href="#about">About</a>
+                <a href="#skills">Skills</a>
+                <a href="#projects">Project</a>
+                <a href="#certificates">Sertificate</a>
+                <a href="#contact">Communicate</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="container hero-content">
+            <h1 id="hero-title">Nevanda Dhizta Evrilian</h1>
+            <p id="hero-subtitle">FULL-STACK SOFTWARE ENGINEER</p>
+            <a href="#contact" class="btn-magic">START COLLABORATION</a>
+        </div>
+    </section>
+
+    <section id="about">
+        <div class="container">
+            <h2 class="reveal scroll-shift" data-speed="0.05">Database Profil</h2>
+            <div class="about-content glass-panel reveal" id="about-text-block">
+                
+                <div class="about-text">
+                    <p>
+                        Hello, I am a Software Engineering graduate who believes that technology is not merely a series of logical instructions, but a medium for creating meaningful solutions.
+                    </p>
+                    <p>
+                        I have a strong enthusiasm for learning any skill both technical and conceptual because 
+                        i believe the process itself is the core of growth. I enjoy exploring, adapting to new challenges, and building digital works that are functional, relevant, and valuable.
+                    </p>
+                    <p style="color: var(--accent-gold); font-style: italic; font-weight: bold; font-size: 1.2rem;">
+                        “Good work is not just about being finished, but about making an impact.”
+                    </p>
+                    
+                    <div class="resume-grid">
+                        <div class="resume-column">
+                            <h3>Education Log</h3>
+                            <div class="resume-item">
+                                <span class="resume-year">2022 - Present</span>
+                                <span class="resume-place">University of Darunnajah</span>
+                                <span class="resume-role">South Jakarta</span>
+                            </div>
+                        </div>
+
+                        <div class="resume-column">
+                            <h3>Experience Log</h3>
+                            <div class="resume-item">
+                                <span class="resume-year">2026</span>
+                                <span class="resume-place">Intership at Evermos</span>
+                                <span class="resume-role">Backend Developer</span>
+                            </div>
+                            <div class="resume-item">
+                                <span class="resume-year">2026</span>
+                                <span class="resume-place">Course at CodeSignal</span>
+                                <span class="resume-role">Programming Python</span>
+                            </div>
+                            <div class="resume-item">
+                                <span class="resume-year">2026</span>
+                                <span class="resume-place">Frontend Dev at FreeCodeCamp</span>
+                                <span class="resume-role">Intensive Program(approxymately 300 hours work)</span>
+                            </div>
+                            <div class="resume-item">
+                                <span class="resume-year">2026</span>
+                                <span class="resume-place">Course at Dicoding</span>
+                                <span class="resume-role">Building Generative AI Apps with Azure</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-img-wrapper reveal-flip" id="about-img-wrap">
+                    <img src="assets\profile.jpg.jpeg" alt="Nevanda Profile" class="about-img">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills">
+        <div class="container">
+            <h2 class="reveal scroll-shift" data-speed="-0.05">Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-card reveal-flip">
+                    <div class="skill-icon">🎨</div>
+                    <h3>UI/UX Design</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">Figma, Prototyping, User Research</p>
+                </div>
+                <div class="skill-card reveal-flip">
+                    <div class="skill-icon">✨</div>
+                    <h3>Frontend Dev</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">HTML5, CSS3, Modern JavaScript, React, Redux</p>
+                </div>
+                <div class="skill-card reveal-flip">
+                    <div class="skill-icon">🌐</div>
+                    <h3>Backend Dev</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">Go, Node.js, Python, PHP, MySQL, REST API</p>
+                </div>
+                <div class="skill-card reveal-flip">
+                    <div class="skill-icon">🗂️</div>
+                    <h3>Microsoft Office</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 10px;">Microsoft Word, Microsoft Excel, Microsoft PowerPoint</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects">
+        <div class="container">
+            <h2 class="reveal scroll-shift">Projects</h2>
+            
+            <div class="projects-grid">
+                
+                <div class="project-card reveal">
+                    <div class="project-img-wrapper">
+                        <img src="assets/keranjang.png" alt="E-Commerce Backend" class="project-img parallax-img">
+                    </div>
+                    <div class="project-overlay">
+                        <div class="project-content">
+                            <h3 class="project-title">E-Commerce Backend</h3>
+                            <div class="tech-stack">
+                                <span class="tech-pill">Golang</span>
+                                <span class="tech-pill">MySQL</span>
+                            </div>
+                            <p class="project-desc">Robust backend development for Evermos’ e-commerce ecosystem ensuring seamless transactions.</p>
+                            <a href="https://github.com/Nevanda12/Miniproject-Nevanda.git" target="_blank" class="project-link">
+                                View Details
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card reveal">
+                    <div class="project-img-wrapper">
+                        <img src="assets/buku.jpeg" alt="Library System" class="project-img parallax-img">
+                    </div>
+                    <div class="project-overlay">
+                        <div class="project-content">
+                            <h3 class="project-title">Darunnajah Library</h3>
+                            <div class="tech-stack">
+                                <span class="tech-pill">PHP</span>
+                                <span class="tech-pill">Web System</span>
+                            </div>
+                            <p class="project-desc">A comprehensive web-based library management system simplifying borrowing and archiving.</p>
+                            <a href="https://github.com/Nevanda12/Miniproject-Nevanda.git" target="_blank" class="project-link">
+                                View Details
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="project-card reveal">
+                    <div class="project-img-wrapper">
+                        <img src="assets/otak.jpeg" alt="SkillSwap Applications" class="project-img parallax-img">
+                    </div>
+                    <div class="project-overlay">
+                        <div class="project-content">
+                            <h3 class="project-title">SkillSwap Application</h3>
+                            <div class="tech-stack">
+                                <span class="tech-pill">React</span>
+                                <span class="tech-pill">Redux</span>
+                            </div>
+                            <p class="project-desc">A two-way matching platform empowering users to exchange skills and collaborate effectively.</p>
+                            <a href="https://github.com/Nevanda12/Miniproject-Nevanda.git" target="_blank" class="project-link">
+                                View Details
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+    </section>
+
+    <section id="certificates">
+        <div class="container">
+            <h2 class="reveal scroll-shift">Archive Dimension</h2>
+            <div class="dimension-box reveal">
+                <h3 style="color: var(--accent-cyan); font-family: var(--font-serif); font-size: 2rem; margin-bottom: 20px; letter-spacing: 3px;">
+                    Sertificate Portal
+                </h3>
+                <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; margin-bottom: 40px; max-width: 600px;">
+                  The system detects another dimension that stores achievement archives. Click the button below to jump to the dimension
+                </p>
+                <a href="3d-journey.html" class="btn-hyperdrive">
+                    WARP JUMP SYNTHESIS →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" style="margin-bottom: 80px;">
+        <div class="container contact-container">
+            <h2 class="reveal scroll-shift">Let's Create Magic</h2>
+            <p style="margin-bottom: 40px; color: var(--text-muted); font-size: 1.2rem;" class="reveal">Have a dream project? Let's make it happen.</p>
+            
+            <form class="contact-form glass-panel reveal" id="contactForm" action="https://formspree.io/f/mwvnpzjr" method="POST">
+                <div class="input-group">
+                    <input type="text" name="nama" placeholder="Name(opsional)" required>
+                </div>
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="Email" required>
+                </div>
+                <div class="input-group">
+                    <textarea name="pesan" rows="5" placeholder="Write your idea..." required></textarea>
+                </div>
+                <button type="submit" class="btn-magic" style="width: 100%; font-size: 1.1rem;">Send</button>
+            </form>
+
+            <div class="social-links reveal">
+                <a href="https://www.instagram.com/evrlyn.__" target="_blank" class="social-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+                <a href="https://www.linkedin.com/in/Nevanda dhizta Evrilian" target="_blank" class="social-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                </a>
+                <a href="https://www.facebook.com/Ra Neatta" target="_blank" class="social-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                </a>
+                <a href="https://github.com/Nevanda12" target="_blank" class="social-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div id="toast" class="toast">
+        <span style="font-size: 1.5rem;">📡</span>
+        <span id="toast-message">Transmission successfully sent!</span>
+    </div>
+
+    <script>
+        // --- 1. GAME CANVAS LOGIC: WARP DRIVE STARFIELD (BACKBGROUND) ---
+        const canvas = document.getElementById('space-warp');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let stars = [];
+        const numStars = 800;
+        let speed = 0.5; // Kecepatan normal
+        let targetSpeed = 0.5; // Target kecepatan untuk efek scroll
+        const maxSpeed = 25; // Batas maksimal kecepatan warp
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        
+        // Setup untuk Canvas Kursor Roket Utama
+        const rocketCanvas = document.getElementById('rocket-canvas');
+        const rocketCtx = rocketCanvas.getContext('2d');
+        let rocketWidth, rocketHeight;
+        let rocketParticles = [];
+        // Palet warna ekor api yang bersih & elegan (non-colorful pelangi)
+        const firePalette = [
+            'rgba(255, 255, 255, 0.9)', // Putih Inti
+            'rgba(255, 250, 220, 0.7)', // Kuning Muda
+            'rgba(240, 240, 240, 0.5)'  // Abu-abu Terang
+        ];
+        
+        function resize() {
+            // Main space canvas
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            
+            // Rocket canvas (top layer)
+            rocketWidth = rocketCanvas.width = window.innerWidth;
+            rocketHeight = rocketCanvas.height = window.innerHeight;
+
+            mouseX = width / 2;
+            mouseY = height / 2;
+        }
+        
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Mouse tracking
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        class Star {
+            constructor() {
+                this.x = (Math.random() - 0.5) * width * 2;
+                this.y = (Math.random() - 0.5) * height * 2;
+                this.z = Math.random() * width;
+                this.pz = this.z;
+            }
+            
+            update() {
+                this.z -= speed;
+                if (this.z < 1) {
+                    this.z = width;
+                    this.x = (Math.random() - 0.5) * width * 2;
+                    this.y = (Math.random() - 0.5) * height * 2;
+                    this.pz = this.z;
+                }
+            }
+            
+            show() {
+                ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+                let offsetX = mouseX - width / 2;
+                let offsetY = mouseY - height / 2;
+                
+                let sx = (this.x / this.z) * width + (width / 2) - (offsetX * (width/this.z)*0.01);
+                let sy = (this.y / this.z) * height + (height / 2) - (offsetY * (width/this.z)*0.01);
+                
+                let r = Math.max(0.1, 1.5 - this.z / width);
+                
+                ctx.beginPath();
+                ctx.arc(sx, sy, r, 0, Math.PI * 2);
+                ctx.fill();
+                
+                let px = (this.x / this.pz) * width + (width / 2) - (offsetX * (width/this.pz)*0.01);
+                let py = (this.y / this.pz) * height + (height / 2) - (offsetY * (width/this.pz)*0.01);
+                
+                this.pz = this.z;
+                
+                if (speed > 1) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = `rgba(6, 182, 212, ${1 - this.z/width})`; 
+                    ctx.lineWidth = r;
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(sx, sy);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        for (let i = 0; i < numStars; i++) {
+            stars.push(new Star());
+        }
+
+        // Loop utama untuk background bintang
+        function animateCanvas() {
+            ctx.fillStyle = 'rgba(2, 2, 4, 0.3)'; 
+            ctx.fillRect(0, 0, width, height);
+            
+            // Transisi halus untuk kecepatan warp dari scroll
+            speed += (targetSpeed - speed) * 0.1;
+            targetSpeed += (0.5 - targetSpeed) * 0.05; // Perlahan kembali ke kecepatan normal
+
+            stars.forEach(star => {
+                star.update();
+                star.show();
+            });
+            
+            requestAnimationFrame(animateCanvas);
+        }
+        
+        // Loop terpisah untuk menggambar roket (selalu di depan)
+        // Loop terpisah untuk menggambar roket (selalu di depan)
+        // Loop terpisah untuk menggambar roket emotikon
+        function animateRocketTrail() {
+            // Bersihkan canvas kursor sepenuhnya setiap frame
+            rocketCtx.clearRect(0, 0, rocketWidth, rocketHeight);
+
+            rocketCtx.globalCompositeOperation = 'lighter';
+            
+            // Spawn HANYA 1 partikel per frame agar sangat ringan
+            rocketParticles.push({
+                x: mouseX, // Mengikuti titik tengah satelit
+                y: mouseY + 10, // Posisi ekor sedikit di bawah satelit
+                size: Math.random() * 2 + 1.5, 
+                life: 2, // Umur partikel digandakan agar bisa bertahan lebih lama (ekor panjang)
+                vx: (Math.random() - 0.5) * 0.5, // Sebaran horizontal diperkecil agar ekor lebih rapi
+                vy: Math.random() * 1.5 + speed * 0.1 + 0.5, 
+                color: firePalette[Math.floor(Math.random() * firePalette.length)]
+            });
+
+            // Update & Render partikel ekor api
+            for (let i = rocketParticles.length - 1; i >= 0; i--) {
+                let p = rocketParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                // PENGATURAN EKOR PANJANG:
+                p.life -= 0.008; // Dikurangi sangat sedikit agar partikel tidak cepat hilang
+                p.size *= 0.98;  // Mengecil dengan perlahan
+
+                if (p.life <= 0 || p.size <= 0.2) {
+                    rocketParticles.splice(i, 1);
+                } else {
+                    rocketCtx.fillStyle = p.color;
+                    // Batasi opacity maksimal di 1 agar warna tidak terlalu menumpuk
+                    rocketCtx.globalAlpha = Math.max(0, p.life > 1 ? 1 : p.life);
+                    rocketCtx.beginPath();
+                    rocketCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    rocketCtx.fill();
+                }
+            }
+            
+            // Kembalikan pengaturan default
+            rocketCtx.globalAlpha = 1;
+            rocketCtx.globalCompositeOperation = 'source-over';
+
+            // --- MENGGAMBAR KURSOR SATELIT ---
+            rocketCtx.save();
+            rocketCtx.font = "24px sans-serif"; // Ukuran normal standar kursor
+            rocketCtx.textAlign = "center";
+            rocketCtx.textBaseline = "middle";
+            
+            // Render emotikon satelit tepat di posisi kursor
+            rocketCtx.fillText("🛰️", mouseX, mouseY); 
+            rocketCtx.restore();
+
+            requestAnimationFrame(animateRocketTrail);
+        }
+
+        // Memulai kedua loop animasi
+        animateCanvas();
+        animateRocketTrail();
+
+        // --- 2. PARALLAX EFFECT & SCROLL WARP TRIGGER ---
+        let lastScrollY = window.scrollY;
+        const scrollShifters = document.querySelectorAll('.scroll-shift');
+        const parallaxImages = document.querySelectorAll('.parallax-img');
+
+        function updateParallax() {
+            const scrollY = window.scrollY;
+            const windowHeight = window.innerHeight;
+
+            // Memicu kecepatan bintang (Warp Speed) berdasarkan intensitas scroll
+            let scrollDelta = Math.abs(scrollY - lastScrollY);
+            if (scrollDelta > 0) {
+                targetSpeed = 0.5 + (scrollDelta * 0.8);
+                if (targetSpeed > maxSpeed) targetSpeed = maxSpeed;
+            }
+
+            // Headings shifting
+            scrollShifters.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < windowHeight && rect.bottom > 0) {
+                    const elSpeed = parseFloat(el.getAttribute('data-speed') || 0.08);
+                    const offset = rect.top - (windowHeight / 2);
+                    el.style.transform = `translateX(${offset * elSpeed}px)`;
+                }
+            });
+
+            // Parallax pada gambar project
+            parallaxImages.forEach(img => {
+                if (!img.closest('.project-card:hover')) {
+                    const rect = img.parentElement.getBoundingClientRect();
+                    if (rect.top < windowHeight && rect.bottom > 0) {
+                        const imgSpeed = 0.1;
+                        const offset = rect.top - (windowHeight / 2); 
+                        img.style.transform = `scale(1.1) translateY(${offset * imgSpeed}px)`;
+                    }
+                }
+            });
+
+            lastScrollY = scrollY;
+            requestAnimationFrame(updateParallax);
+        }
+        requestAnimationFrame(updateParallax);
+
+        // --- 3. SCROLL REVEAL ---
+        const revealElements = document.querySelectorAll('.reveal, .reveal-flip');
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    if(entry.target.tagName === 'H2') {
+                        entry.target.style.opacity = 1; 
+                        entry.target.style.animation = 'none';
+                    }
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 }); 
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // --- 4. FORM HANDLING ---
+        const contactForm = document.getElementById('contactForm');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = contactForm.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "Transmitting...";
+            
+            const formData = new FormData(contactForm);
+            
+            try {
+                const response = await fetch(contactForm.action, {
+                    method: "POST",
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    contactForm.reset();
+                    toastMessage.innerText = "Message received! Waiting for a reply response.";
+                    toast.style.borderLeftColor = "var(--accent-cyan)";
+                    toast.classList.add('show');
+                } else {
+                     throw new Error('Network error');
+                }
+            } catch (error) {
+                 toastMessage.innerText = "Failed to send message.";
+                 toast.style.borderLeftColor = "red";
+                 toast.classList.add('show');
+            } finally {
+                btn.innerText = originalText;
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 4000);
+            }
+        });
+    </script>
+</body>
+</html>
