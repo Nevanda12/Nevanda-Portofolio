@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nevanda Portfolio | Space Journey</title>
     <style>
+    .scroll-indicator{
+    margin-top:40px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+
+    color:var(--accent-cyan);
+    font-size:0.8rem;
+    letter-spacing:4px;
+    text-transform:uppercase;
+
+    animation:scrollFloat 2s ease-in-out infinite;
+}
+
+.scroll-indicator span{
+    font-size:1.4rem;
+}
+
+@keyframes scrollFloat{
+    0%,100%{
+        transform:translateY(0);
+        opacity:.7;
+    }
+    50%{
+        transform:translateY(10px);
+        opacity:1;
+    }
+}
 
         /* --- ANIMASI ASTRONOT & ASTEROID DI NAVBAR --- */
 .space-chase-container {
@@ -1024,7 +1053,16 @@
         <div class="container hero-content">
             <h1 id="hero-title">Nevanda Dhizta Evrilian</h1>
             <p id="hero-subtitle">FULL-STACK SOFTWARE ENGINEER</p>
-            <a href="#contact" class="btn-magic">START COLLABORATION</a>
+            <a href="pixel-antar-galaxy-mobile.html" class="btn-magic">
+    TRY PLAYING THE GAME
+</a>
+<div class="scroll-indicator">
+   ⬇
+
+SCROLL TO EXPLORE
+
+⬇
+</div>
         </div>
     </section>
 
